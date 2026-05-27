@@ -1,0 +1,18 @@
+name: CI
+"on":
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install numpy pytest
+      - run: python -c "from backends.brute_force import BruteForceIndex; import numpy as np; rng=np.random.default_rng(0); v=rng.standard_normal((100,32)).astype('float32'); q=rng.standard_normal(32).astype('float32'); idx=BruteForceIndex(); idx.build(v); ids,sc=idx.search(q,5); assert len(ids)==5; print('brute force OK')"
+      - run: python -c "from benchmark.runner import compute_recall; r=compute_recall([[1,2,3,4,5]],[[1,2,3,4,5]],5); assert r==1.0; r2=compute_recall([[1,2,3,4,5]],[[6,7,8,9,10]],5); assert r2==0.0; print('recall metric OK')"
+      - run: python run_benchmark.py --n_vectors 1000 --n_queries 100 --dim 32
